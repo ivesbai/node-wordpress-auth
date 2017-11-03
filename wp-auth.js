@@ -187,7 +187,7 @@ function Valid_Auth( data, auth ) {
 
 	if ( user_login in auth.known_hashes ) {
 		return process.nextTick(function() {
-			parse( auth.known_hashes[user_login].frag, auth.known_hashes[user_login].id );
+			parse( auth.known_hashes[user_login].frag, auth.known_hashes[user_login].id, auth.known_hashes[user_login].data );
 		} );
     }
 
