@@ -170,7 +170,7 @@ function Valid_Auth( data, auth ) {
 		delete auth.known_hashes_timeout[user_login];
 	}
 
-	function parse( pass_frag, id ) {
+	function parse( pass_frag, id, data ) {
 		var hmac1 = crypto.createHmac( 'md5', auth.salt );
         var key = user_login + '|' + pass_frag + '|' + expiration + '|' + token;
         hmac1.update(key);
@@ -179,7 +179,7 @@ function Valid_Auth( data, auth ) {
         hmac2.update(user_login + '|' + expiration + '|' + token);
         var cookieHash = hmac2.digest('hex');
 		if ( hash == cookieHash ) {
-			self.emit( 'auth', true, id );
+			self.emit( 'auth', true, id, data );
 		} else {
 			self.emit( 'auth', false, 0, "invalid hash" );
 		}
@@ -193,16 +193,16 @@ function Valid_Auth( data, auth ) {
 
 
 	var found = false;
-	auth.db.query( 'select ID, user_pass from ' + auth.table_prefix + 'users where user_login = \'' + user_login.replace( /(\'|\\)/g, '\\$1' ) + '\'' ).on( 'row', function( data ) {
+	auth.db.query( 'select ID, user_login, user_pass, user_email, display_name from ' + auth.table_prefix + 'users where user_login = \'' + user_login.replace( /(\'|\\)/g, '\\$1' ) + '\'' ).on( 'row', function( data ) {
 		found = true;
-		auth.known_hashes[user_login] = {frag: data.user_pass.substr( 8, 4 ), id: data.ID};
+		auth.known_hashes[user_login] = {frag: data.user_pass.substr( 8, 4 ), id: data.ID, data: {id: data.ID, login: data.user_login, email: data.user_email, display_name: data.display_name}};
 		auth.known_hashes_timeout[user_login] = +new Date + auth.timeout;
 	} ).on( 'end', function() {
 		if ( !found ) {
-			auth.known_hashes[user_login] = {frag: '__fail__', id: 0};
+			auth.known_hashes[user_login] = {frag: '__fail__', id: 0, data: {}};
 			auth.known_hashes_timeout[user_login] = +new Date + auth.timeout;
 		}
-		parse( auth.known_hashes[user_login].frag, auth.known_hashes[user_login].id );
+		parse( auth.known_hashes[user_login].frag, auth.known_hashes[user_login].id, auth.known_hashes[user_login].data );
 	} );
 }
 
