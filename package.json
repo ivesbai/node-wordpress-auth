@@ -12,7 +12,7 @@
     "node": ">=0.4"
   },
   "dependencies": {
-    "mysql-native": ">=0.4.3"
+    "mysql-native": "^0.4.7"
   },
   "devDependencies": {},
   "main": "wp-auth"
