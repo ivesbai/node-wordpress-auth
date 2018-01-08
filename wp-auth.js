@@ -184,8 +184,8 @@ function createWordpressNonce(salt, life, action, uid, token) {
 	let tick = Math.ceil(Math.floor(new Date().getTime()/1000)/(life/2));
 	let hmac = crypto.createHmac( 'md5', salt );
 	let key = tick + '|' + action + '|' + uid + '|' + token;
-	hmac1.update(key);
-	let hkey = hmac1.digest('hex');
+	hmac.update(key);
+	let hkey = hmac.digest('hex');
 	return hkey.substring(hkey.length - 12, hkey.length - 2);
 }
 
