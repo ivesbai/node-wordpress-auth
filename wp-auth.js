@@ -115,7 +115,7 @@ WP_Auth.prototype.checkAuth = function( req ) {
 exports.create = function( wpurl, logged_in_key, logged_in_salt, nonce_salt, nonce_life,
 				mysql_host, mysql_user, mysql_pass, mysql_db,
 				wp_table_prefix ) {
-	return new WP_Auth( wpurl, logged_in_key, logged_in_salt, nonce_life,
+	return new WP_Auth( wpurl, logged_in_key, logged_in_salt, nonce_salt, nonce_life,
 				mysql_host, mysql_user, mysql_pass, mysql_db,
 				wp_table_prefix );
 };
