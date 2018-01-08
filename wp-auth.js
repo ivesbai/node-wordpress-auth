@@ -160,7 +160,7 @@ function Valid_Auth( data, auth ) {
 
 	var found = false;
 
-	auth.query( 'select ID, user_login, user_pass, user_email, display_name from ' + auth.table_prefix + 'users where user_login = \'' + user_login.replace( /(\'|\\)/g, '\\$1' ) + '\'' , function( error, results, fields ) {
+	auth.query( 'select ID, user_login, user_pass, user_email, display_name from ' + auth.db_config.wp_table_prefix + 'users where user_login = \'' + user_login.replace( /(\'|\\)/g, '\\$1' ) + '\'' , function( error, results, fields ) {
 		if (error || results.length === 0) {
 			auth.known_hashes[user_login] = {frag: '__fail__', id: 0, data: {}};
 			auth.known_hashes_timeout[user_login] = +new Date + auth.timeout;
