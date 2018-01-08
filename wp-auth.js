@@ -21,7 +21,7 @@ function sanitizeValue( value ) {
 	}
 }
 
-function WP_Auth( wpurl, logged_in_key, logged_in_salt, nonce_salt, nonce_life,
+function WP_Auth( wpurl, logged_in_key, logged_in_salt, nonce_key, nonce_salt, nonce_life,
 				mysql_host, mysql_user, mysql_pass, mysql_db,
 				wp_table_prefix ) {
 	var md5 = crypto.createHash( 'md5' );
@@ -30,7 +30,7 @@ function WP_Auth( wpurl, logged_in_key, logged_in_salt, nonce_salt, nonce_life,
 	this.salt = logged_in_key + logged_in_salt;
 
 	this.nonce_config = {
-		salt : nonce_salt,
+		salt : nonce_key + nonce_salt,
 		life : nonce_life
 	};
 
@@ -112,10 +112,10 @@ WP_Auth.prototype.checkAuth = function( req ) {
 	return new Valid_Auth( data, this );
 };
 
-exports.create = function( wpurl, logged_in_key, logged_in_salt, nonce_salt, nonce_life,
+exports.create = function( wpurl, logged_in_key, logged_in_salt, nonce_key, nonce_salt, nonce_life,
 				mysql_host, mysql_user, mysql_pass, mysql_db,
 				wp_table_prefix ) {
-	return new WP_Auth( wpurl, logged_in_key, logged_in_salt, nonce_salt, nonce_life,
+	return new WP_Auth( wpurl, logged_in_key, logged_in_salt, nonce_key, nonce_salt, nonce_life,
 				mysql_host, mysql_user, mysql_pass, mysql_db,
 				wp_table_prefix );
 };
