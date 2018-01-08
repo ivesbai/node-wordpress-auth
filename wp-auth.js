@@ -21,13 +21,18 @@ function sanitizeValue( value ) {
 	}
 }
 
-function WP_Auth( wpurl, logged_in_key, logged_in_salt,
+function WP_Auth( wpurl, logged_in_key, logged_in_salt, nonce_salt, nonce_life,
 				mysql_host, mysql_user, mysql_pass, mysql_db,
 				wp_table_prefix ) {
 	var md5 = crypto.createHash( 'md5' );
 	md5.update( wpurl );
 	this.cookiename = 'wordpress_logged_in_' + md5.digest( 'hex' );
 	this.salt = logged_in_key + logged_in_salt;
+
+	this.nonce_config = {
+		salt : nonce_salt,
+		life : nonce_life
+	};
 
 	// 
 	this.db_config = {
@@ -107,10 +112,10 @@ WP_Auth.prototype.checkAuth = function( req ) {
 	return new Valid_Auth( data, this );
 };
 
-exports.create = function( wpurl, logged_in_key, logged_in_salt,
+exports.create = function( wpurl, logged_in_key, logged_in_salt, nonce_salt, nonce_life,
 				mysql_host, mysql_user, mysql_pass, mysql_db,
 				wp_table_prefix ) {
-	return new WP_Auth( wpurl, logged_in_key, logged_in_salt,
+	return new WP_Auth( wpurl, logged_in_key, logged_in_salt, nonce_life,
 				mysql_host, mysql_user, mysql_pass, mysql_db,
 				wp_table_prefix );
 };
@@ -145,7 +150,8 @@ function Valid_Auth( data, auth ) {
         hmac2.update(user_login + '|' + expiration + '|' + token);
         var cookieHash = hmac2.digest('hex');
 		if ( hash == cookieHash ) {
-			self.emit( 'auth', true, id, data, {token, hash} );
+			data.nonce = createWordpressNonce(auth.nonce_config.nonce, auth.nonce_config.life, 'wp_rest', user_login, token);
+			self.emit( 'auth', true, id, data);
 		} else {
 			self.emit( 'auth', false, 0, "invalid hash" );
 		}
@@ -172,6 +178,15 @@ function Valid_Auth( data, auth ) {
 		}
 		parse( auth.known_hashes[user_login].frag, auth.known_hashes[user_login].id, auth.known_hashes[user_login].data );
 	} );
+}
+
+function createWordpressNonce(salt, life, action, uid, token) {
+	let tick = Math.ceil(Math.floor(new Date().getTime()/1000)/(life/2));
+	let hmac = crypto.createHmac( 'md5', salt );
+	let key = tick + '|' + action + '|' + uid + '|' + token;
+	hmac1.update(key);
+	let hkey = hmac1.digest('hex');
+	return hkey.substring(hkey.length - 12, hkey.length - 2);
 }
 
 require( 'util' ).inherits( Valid_Auth, require( 'events' ).EventEmitter );
