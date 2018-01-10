@@ -89,8 +89,15 @@ WP_Auth.prototype.query = function(sql, cb) {
 				cb(err, results, fields);
 			});
 		});
+	} else {
+		this.connection.query(sql, (err, results, fields) => {
+			if (err) {
+				console.info(`failed to execute query[${sql}]: ${err}`);
+				this.connection = null;
+			}
+			cb(err, results, fields);
+		});
 	}
-	return this.connection;
 };
 
 WP_Auth.prototype.checkAuth = function( req ) {
