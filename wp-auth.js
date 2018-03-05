@@ -158,6 +158,7 @@ function Valid_Auth( data, auth ) {
         var cookieHash = hmac2.digest('hex');
 		if ( hash == cookieHash ) {
 			data.nonce = createWordpressNonce(auth.nonce_config.salt, auth.nonce_config.life, 'wp_rest', id, token);
+			data.ts = new Date().getTime();
 			self.emit( 'auth', true, id, data);
 		} else {
 			self.emit( 'auth', false, 0, "invalid hash" );
