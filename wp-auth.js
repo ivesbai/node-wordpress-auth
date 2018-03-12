@@ -143,6 +143,13 @@ function Valid_Auth( data, auth ) {
 	var self = this, user_login = data[0], expiration = data[1], token = data[2], hash = data[3];
 	user_login = user_login.replace('%40', '@');
 
+	var current_time = Math.ceil( new Date().getTime() / 1000 );
+
+	if (expiration < current_time) {
+		self.emit( 'auth', false, 0, "hash expired" );
+		return;
+	}
+
 	if ( user_login in auth.known_hashes_timeout && auth.known_hashes_timeout[user_login] < +new Date ) {
 		delete auth.known_hashes[user_login];
 		delete auth.known_hashes_timeout[user_login];
@@ -157,12 +164,38 @@ function Valid_Auth( data, auth ) {
         hmac2.update(user_login + '|' + expiration + '|' + token);
         var cookieHash = hmac2.digest('hex');
 		if ( hash == cookieHash ) {
-			data.nonce = createWordpressNonce(auth.nonce_config.salt, auth.nonce_config.life, 'wp_rest', id, token);
-			data.ts = new Date().getTime();
-			self.emit( 'auth', true, id, data);
+			checkWordpressSession(data.id, token, data);
 		} else {
 			self.emit( 'auth', false, 0, "invalid hash" );
 		}
+	}
+
+	function checkWordpressSession(userId, token, data) {
+		auth.query( 'select meta_value from ' + auth.db_config.wp_table_prefix + 'usermeta where user_id = \'' + userId + '\' AND meta_key=\'session_tokens\'' , function( error, results, fields ) {
+			if (error || results.length === 0) {
+				self.emit( 'auth', false, 0, "no session found" );
+			} else {
+				var result = results[0];
+				var sessions = phpjs.unserialize(result.meta_value);
+				var session_key = hash_sha256(token);
+				if (typeof sessions[session_key] !== 'undefined') {
+					var session = sessions[session_key];
+					if (session.expiration >= current_time) {
+						data.nonce = createWordpressNonce(auth.nonce_config.salt, auth.nonce_config.life, 'wp_rest', id, token);
+						data.ts = new Date().getTime();
+						self.emit( 'auth', true, id, data);
+					} else {
+						self.emit( 'auth', false, 0, "hash expired" );
+					}
+				} else {
+					self.emit( 'auth', false, 0, "no session found" );
+				}
+			}
+		} );
+	}
+
+	function hash_sha256(token) {
+		return crypto.createHash('sha256').update(token).digest('hex');
 	}
 
 	if ( user_login in auth.known_hashes ) {
@@ -187,6 +220,8 @@ function Valid_Auth( data, auth ) {
 		parse( auth.known_hashes[user_login].frag, auth.known_hashes[user_login].id, auth.known_hashes[user_login].data );
 	} );
 }
+
+
 
 function createWordpressNonce(salt, life, action, uid, token) {
 	let tick = Math.ceil(Math.floor(new Date().getTime()/1000)/(life/2));
