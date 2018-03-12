@@ -170,7 +170,7 @@ function Valid_Auth( data, auth ) {
 		}
 	}
 
-	function checkWordpressSession(userId, token, data) {
+	function checkWordpressSession(id, token, data) {
 		auth.query( 'select meta_value from ' + auth.db_config.wp_table_prefix + 'usermeta where user_id = \'' + userId + '\' AND meta_key=\'session_tokens\'' , function( error, results, fields ) {
 			if (error || results.length === 0) {
 				self.emit( 'auth', false, 0, "no session found" );
